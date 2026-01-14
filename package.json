@@ -1,0 +1,32 @@
+{
+  "name": "docker-learning-30days",
+  "version": "1.0.0",
+  "description": "`NextMv -: is a Uptime Robot Open Scoure Version for developers.`",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sukhrajdev/Docker-Learning-30days.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/sukhrajdev/Docker-Learning-30days/issues"
+  },
+  "homepage": "https://github.com/sukhrajdev/Docker-Learning-30days#readme",
+  "devDependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11",
+    "prisma": "^7.2.0"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  }
+}
