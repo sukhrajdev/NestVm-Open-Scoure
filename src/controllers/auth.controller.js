@@ -1,0 +1,139 @@
+import { prisma} from "../config/prisma.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { generateToken } from "../uilts/generateToken.js";
+
+export async function register(req, res) {
+    try{
+        const { username, email, password } = req.body; // Destructure input fields
+        
+        // Validate input
+        if(!username || !email || !password){
+            return  res.status(400).json({ status: 400, message: "All fields are required" });
+        }
+        // Validate username length
+        if(username.length < 3){
+            return res.status(400).json({ status: 400, message: "Username must be at least 3 characters long" });
+        }
+        // Validate email format
+        if(!email.endsWith("@example.com")){
+            return res.status(400).json({ status: 400, message: "Email must be from the domain example.com" });
+        }
+
+        // Validate password length
+        if(password.length < 6){
+            return res.status(400).json({ status: 400, message: "Password must be at least 6 characters long" });
+        }
+
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ status: 400, message: "User already exists" });
+        }
+        
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Generate tokens
+        const authToken = jwt.sign(
+            { userId: newUser.id },
+            process.env.AUTH_TOKEN_SECRET,
+            { expiresIn: process.env.AUTH_TOKEN_EXPIRES_IN }
+        );
+
+        // Create user
+        const newUser = await prisma.user.create({
+            data: {
+                username,
+                email,
+                password: hashedPassword,
+                authToken
+            },
+        });
+
+        // Respond with success
+        return res.status(201).json({
+            status: 201,
+            message: "User registered successfully",
+            data: {
+                id: newUser.id,
+                username: newUser.username,
+                email: newUser.email,
+                authToken: newUser.authToken
+            }
+        })
+    }catch(err){
+        console.error(err);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error" 
+
+            });
+    }
+}
+
+export async function login(req, res){
+    try{
+        const { email, password } = req.body;
+        
+        // Validate input
+        if(!email || !password){
+            return res.status(400).json({ status: 400, message: "Email and password are required" });
+        }
+        // Find user by email
+        const user = await prisma.user.findUnique({ where: { email } });
+        if(!user){
+            return res.status(400).json({ status: 400, message: "Invalid email or password" });
+        }
+        // Compare passwords
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if(!isPasswordValid){
+            return res.status(400).json({ status: 400, message: "Invalid email or password" });
+        }
+        // Generate new tokens
+        const {accessToken,refreshToken} = generateToken(user.id);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                refreshToken: refreshToken
+            }
+        })
+
+        // Respond with tokens
+        return res.status(200)
+        .cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        })
+        .cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        })
+        .json({
+            status: 200,
+            message: "Login successful",
+            data: {
+                userId: user.id,
+                username: user.username,
+                email: user.email
+            }
+        });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error"
+        });
+    }
+}
+
+export async function logout(req, res){
+    try{
+        const {refreshToken,accessToken} = req.cookie;
+    }
+}

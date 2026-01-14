@@ -20,8 +20,8 @@ model User {
   password String
   isVerified Boolean  @default(false)
   monitors   Monitor[]
-  refreshTokens String
-  authTokens    String
+  refreshToken String
+  authToken    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
