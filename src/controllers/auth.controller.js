@@ -134,6 +134,69 @@ export async function login(req, res){
 
 export async function logout(req, res){
     try{
-        const {refreshToken,accessToken} = req.cookie;
+        const {refreshToken,accessToken} = req.cookies;
+        if(!refreshToken || !accessToken){
+            return res.status(400).json({ status: 400, message: "No tokens provided" });
+        }
+        // Clear cookies
+        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken");
+        // Respond with success
+        return res.status(200).json({
+            status: 200,
+            message: "Logout successful"
+        });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error"
+        });
+    }
+}
+
+export async function refreshToken(req, res){
+    try{
+        const { refreshToken } = req.cookies;
+        if(!refreshToken){
+            return res.status(400).json({ status: 400, message: "No refresh token provided" });
+        }
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const userId = decoded.userId;
+
+        // Generate new tokens
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateToken(userId);
+        
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                refreshToken: newRefreshToken
+            }
+        });
+        // Set new cookies
+        return res.status(200)
+        .cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        })
+        .cookie("accessToken", newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        })
+        .json({
+            status: 200,
+            message: "Tokens refreshed successfully"
+        });
+    }catch(err){
+        console.error(err.message);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error"
+        });
     }
 }
