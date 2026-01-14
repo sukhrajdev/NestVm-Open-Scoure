@@ -200,3 +200,35 @@ export async function refreshToken(req, res){
         });
     }
 }
+
+export async function VerificationEmail(req, res){
+    try{
+        const { authToken } = req.params;
+        if(!authToken){
+            return res.status(400).json({ status: 400, message: "No auth token provided" });
+        }
+        // Verify auth token
+        const decoded = jwt.verify(authToken, process.env.AUTH_TOKEN_SECRET);
+        const userId = decoded.userId;
+        
+        // Update user verification status
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                isVerified: true,
+                authToken: null
+            }
+        });
+        // Respond with success
+        return res.status(200).json({
+            status: 200,
+            message: "Email verified successfully"
+        });
+    }catch(err){
+        console.error(err.message);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error"
+        });
+    }
+}
