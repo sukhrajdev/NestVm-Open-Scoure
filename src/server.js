@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import monitorRouter from './routes/monitor.routes.js';
 import cookieParser from 'cookie-parser';
 import "dotenv/config";
 
@@ -15,6 +16,13 @@ app.use(cookieParser());
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/monitors', monitorRouter);
+
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 // Start the server
 app.listen(PORT, () => {
