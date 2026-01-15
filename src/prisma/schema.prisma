@@ -13,13 +13,21 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password String
   isVerified Boolean  @default(false)
+  role     Role     @default(USER)
   monitors   Monitor[]
+  monitorCount Int      @default(0)
+  maxMonitors  Int      @default(5)
   refreshToken String
   authToken    String
   createdAt DateTime @default(now())

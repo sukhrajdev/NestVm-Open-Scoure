@@ -2,8 +2,9 @@ import { prisma} from "../config/prisma.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateToken } from "../uilts/generateToken.js";
+import { sendVerificationEmail } from "../uilts/sendVerificationEmail.js";
 
-export async function register(req, res) {
+export async function registerUser(req, res) {
     try{
         const { username, email, password } = req.body; // Destructure input fields
         
@@ -51,6 +52,8 @@ export async function register(req, res) {
             },
         });
 
+        await sendVerificationEmail(email,authToken);
+
         // Respond with success
         return res.status(201).json({
             status: 201,
@@ -72,7 +75,7 @@ export async function register(req, res) {
     }
 }
 
-export async function login(req, res){
+export async function loginUser(req, res){
     try{
         const { email, password } = req.body;
         
@@ -223,6 +226,52 @@ export async function VerificationEmail(req, res){
         return res.status(200).json({
             status: 200,
             message: "Email verified successfully"
+        });
+    }catch(err){
+        console.error(err.message);
+        res.status(500).json({
+            status: 500,
+            message: "Internal server error"
+        });
+    }
+}
+
+export async function resendVerificationEmail(req, res){
+    try{
+        const { email } = req.body;
+        if(!email){
+            return res.status(400).json({ status: 400, message: "Email is required" });
+        }
+        // Find user by email
+        const user = await prisma.user.findUnique({ where: { email } });
+        if(!user){
+            return res.status(400).json({ status: 400, message: "User not found" });
+        }
+        if(user.isVerified){
+            return res.status(400).json({ status: 400, message: "Email is already verified" });
+        }
+        // Generate new auth token
+        const authToken = jwt.sign(
+            { userId: user.id },
+            process.env.AUTH_TOKEN_SECRET,
+            { expiresIn: process.env.AUTH_TOKEN_EXPIRES_IN }
+        );
+
+        // Update user with new auth token
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                authToken
+            }
+        });
+
+        // Send verification email
+        await sendVerificationEmail(email, authToken);
+        
+        // Respond with success
+        return res.status(200).json({
+            status: 200,
+            message: "Verification email resent successfully"
         });
     }catch(err){
         console.error(err.message);
