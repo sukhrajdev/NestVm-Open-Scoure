@@ -269,4 +269,4 @@ For issues and questions, please open an issue on [GitHub](https://github.com/su
 
 ---
 
-**Last Updated**: 2024
+**Last Updated**: 2026
